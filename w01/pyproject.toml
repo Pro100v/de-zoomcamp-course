@@ -1,0 +1,24 @@
+[project]
+name = "w01"
+version = "0.1.0"
+description = "Week-01"
+authors = [
+    {name = "pro100v"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pendulum (>=3.0.0,<4.0.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "sqlalchemy (>=2.0.37,<3.0.0)",
+    "psycopg2-binary (>=2.9.10,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.1.1"
+
