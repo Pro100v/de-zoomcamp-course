@@ -6,7 +6,7 @@ authors = [
     {name = "pro100v"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = "^3.12"
 dependencies = [
     "pendulum (>=3.0.0,<4.0.0)",
     "pandas (>=2.2.3,<3.0.0)",
