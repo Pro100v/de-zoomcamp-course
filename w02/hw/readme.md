@@ -18,7 +18,7 @@
 - `green_tripdata_04_2020.csv`
 - `green_tripdata_2020.csv`
 
-![hw-01](./attach/hw-01.png) 
+![hw-02](./attach/hw-01.png) 
 
 - `green_tripdata_2020-04.csv`
 
@@ -30,7 +30,7 @@
 - 18,324,219
 - 29,430,127
 
-![hw-01](./attach/hw-01.png) 
+![hw-03](./attach/hw-01.png) 
 
 ```sql
 SELECT count(1) FROM `terraform-probe-448818.zoomcamp.yellow_tripdata` 
@@ -47,10 +47,10 @@ where filename like "%_2020_%"
 - 1,734,051
 - 1,342,034
 
-![hw-01](./attach/hw-01.png) 
+![hw-04](./attach/hw-01.png) 
 
 ```sql
-SELECT count(1) FROM `terraform-probe-448818.zoomcamp.yellow_tripdata` 
+SELECT count(1) FROM `terraform-probe-448818.zoomcamp.green_tripdata` 
 where filename like "%_2020_%"
 ```
 - 1,734,051
@@ -67,7 +67,7 @@ SELECT count(1) FROM `terraform-probe-448818.zoomcamp.yellow_tripdata`
 where filename like "%_2021_03%"
 ```
 
-![hw-01](./attach/hw-01.png) 
+![hw-05](./attach/hw-01.png) 
 
 - 1,925,152
 
