@@ -1,0 +1,11 @@
+{
+  "parquetOptions": {
+    "enableListInference": false,
+    "enumAsString": false,
+    "mapTargetType": null
+  },
+  "sourceFormat": "PARQUET",
+  "sourceUris": [
+    "gs://de-student-zoomcamp-probe/hw03/yellow_tripdata_2024-*.parquet"
+  ]
+}
