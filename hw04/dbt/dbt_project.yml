@@ -46,6 +46,6 @@ vars:
 
 seeds:
   de_zoomcamp_2025_ny_taxi_rides:
-    taxi_zone_lookup:
+    hw04_taxi_zone_lookup:
       +column_types:
         locationid: numeric
