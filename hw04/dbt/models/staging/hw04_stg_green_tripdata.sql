@@ -11,12 +11,12 @@ select
     {{ dbt_utils.generate_surrogate_key(['vendorid', 'lpep_pickup_datetime']) }} as tripid,
     {{ dbt.safe_cast("vendorid", api.Column.translate_type("integer")) }} as vendorid,
     {{ dbt.safe_cast("ratecodeid", api.Column.translate_type("integer")) }} as ratecodeid,
-    {{ dbt.safe_cast("pulocationid", api.Column.translate_type("integer")) }} as pickup_location,
-    {{ dbt.safe_cast("dolocationid", api.Column.translate_type("integer")) }} as dropoff_location,
+    {{ dbt.safe_cast("pulocationid", api.Column.translate_type("integer")) }} as pickup_locationid,
+    {{ dbt.safe_cast("dolocationid", api.Column.translate_type("integer")) }} as dropoff_locationid,
 
     -- timestamps / временные метки
     cast(lpep_pickup_datetime as timestamp) as pickup_datetime,
-    cast(lpep_dropoff_datetime as timestamp) as dropoof_datetime,
+    cast(lpep_dropoff_datetime as timestamp) as dropoff_datetime,
 
     -- trip info / информация по поездке
     store_and_fwd_flag,
