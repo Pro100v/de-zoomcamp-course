@@ -267,10 +267,61 @@ Now, what are the values of `p97`, `p95`, `p90` for Green Taxi and Yellow Taxi, 
 
 #### Solving
 
-Was added new model
+Was added new model [./dbt/models/core/hw04_dim_taxi_trips_monthly_fare_p95.sql](dbt/models/core/hw04_dim_taxi_trips_monthly_fare_p95.sql) for compute monthly fare and percentile.
+
+- <details>
+  <summary>model definition:</summary>
+
+  ```sql
+    {{
+        config(
+            materialized='table'
+        )
+    }}
+
+    WITH filtered_trips AS (
+        SELECT 
+            service_type,
+            dfreq_year AS year,
+            dfreq_month AS month,
+            fare_amount
+        FROM {{ ref("hw04_fact_trips") }}
+        WHERE 
+            fare_amount > 0
+            AND trip_distance > 0
+            AND payment_type_description IN ('Cash', 'Credit card')
+    )
+
+    SELECT DISTINCT
+        service_type,
+        year as fare_year,
+        month as fare_month,
+        PERCENTILE_CONT(fare_amount, 0.97) OVER (PARTITION BY service_type, year, month) AS p97,
+        PERCENTILE_CONT(fare_amount, 0.95) OVER (PARTITION BY service_type, year, month) AS p95,
+        PERCENTILE_CONT(fare_amount, 0.90) OVER (PARTITION BY service_type, year, month) AS p90
+    FROM filtered_trips
+    ORDER BY fare_year, fare_month, service_type
+  ```
+
+</details>
+
+SQL for get data for solving question:
+
+```sql
+SELECT * FROM `terraform-probe-448818.zoomcamp.hw04_dim_taxi_trips_monthly_fare_p95` 
+where fare_year=2020
+  and fare_month=4
+```
+
+Result:
+
+| service_type | fare_year | fare_month | p97 | p95 | p90 |
+|:------------ |:--------- |:---------- |:--- |:--- |:--- |
+| green | 2020 | 4 | 55.0 | 45.0 | 26.5 |
+| yellow | 2020 | 4 | 31.5 | 25.5 | 19.0 |
 
 - green: {p97: 55.0, p95: 45.0, p90: 26.5}, yellow: {p97: 52.0, p95: 37.0, p90: 25.5}
-- green: {p97: 55.0, p95: 45.0, p90: 26.5}, yellow: {p97: 31.5, p95: 25.5, p90: 19.0}
+- **green: {p97: 55.0, p95: 45.0, p90: 26.5}, yellow: {p97: 31.5, p95: 25.5, p90: 19.0}**
 - green: {p97: 40.0, p95: 33.0, p90: 24.5}, yellow: {p97: 52.0, p95: 37.0, p90: 25.5}
 - green: {p97: 40.0, p95: 33.0, p90: 24.5}, yellow: {p97: 31.5, p95: 25.5, p90: 19.0}
 - green: {p97: 55.0, p95: 45.0, p90: 26.5}, yellow: {p97: 52.0, p95: 25.5, p90: 19.0}
