@@ -127,3 +127,31 @@ models:
       - name: payment_type_description
         data_type: string
         description: ""
+
+      - name: dfreq_month
+        data_type: int64
+        description: ""
+  
+      - name: dfreq_quarter
+        data_type: string
+        description: ""
+
+      - name: dfreq_year
+        data_type: int64
+        description: ""
+
+  - name: hw04_dim_taxi_trips_quarterly_revenue
+    description: ""
+    columns:
+      - name: revenue_year
+        data_type: int32
+      - name: revenue_quarter
+        data_type: string
+      - name: service_type
+        data_type: string
+      - name: cur_total_ammount
+        data_type: numeric
+      - name: prev_total_ammount
+        data_type: numeric
+      - name: quarter_yty_revenue_growth
+        data_type: numeric
