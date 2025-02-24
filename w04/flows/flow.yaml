@@ -1,0 +1,100 @@
+id: 04.01_github-data-upload-to-gcs
+namespace: zoomcamp.hw03
+
+inputs:
+  - id: taxi
+    type: SELECT
+    displayName: Select taxi type
+    values:
+      - green
+      - yellow
+      - fhv
+    defaults: yellow
+  - id: subdir
+    type: STRING
+    displayName: Define subdirectory (if necessary)
+    defaults: ""
+    required: true
+
+variables:
+  file_type: "csv"
+  file_by_taxi:
+    green: "{{ inputs.taxi }}_tripdata_{{ trigger.date | date('yyyy-MM') }}.{{ vars.file_type }}"
+    yellow: "{{ inputs.taxi }}_tripdata_{{ trigger.date | date('yyyy-MM') }}.{{ vars.file_type }}"
+    fhv: "{{ inputs.taxi }}_tripdata_{{ trigger.date | date('yyyy-MM') }}.{{ vars.file_type }}"
+
+  file_: "{{ inputs.taxi }}_tripdata_{{ trigger.date | date('yyyy-MM') }}.{{ vars.file_type }}"
+  file: "{{ vars.file_by_taxi[inputs.taxi] }}"
+  base_url: "https://github.com/DataTalksClub/nyc-tlc-data/releases/download"
+  url: "{{ vars.base_url ~ '/' ~ inputs.taxi ~ '/' ~ render(vars.file) }}"
+  gcs_in_file: "{{ outputs.extract.outputFiles[render(vars.file)] }}"
+  gcs_out_path: "gs://{{ kv('GCP_BUCKET_NAME') ~ ((inputs.subdir | trim) != '' ? '/' ~ (inputs.subdir | trim) : '') }}"
+  gcs_out_file: "{{ vars.gcs_out_path ~ '/' ~ vars.file }}"
+
+tasks:
+  - id: debug_vars_output
+    type: io.kestra.plugin.core.log.Log
+    message: |
+      Параметры для запуска закачки факлв в GCS:
+        file:         {{ render(vars.file) }} 
+        url:          {{ render(vars.url) }} 
+        gcs_out_path: {{ render(vars.gcs_out_path) }} 
+        gcs_out_file: {{ render(vars.gcs_out_file) }}
+
+  - id: set_label
+    type: io.kestra.plugin.core.execution.Labels
+    labels:
+      file: "{{ render(vars.file) }}"
+      taxi: "{{ inputs.taxi }}"
+      date: "{{ trigger.date | date('YYYY-MM') }}"
+      # gcs_file: "{{ render(vars.gcs_file) }}"
+
+  - id: extract
+    type: io.kestra.plugin.scripts.shell.Commands
+    outputFiles:
+      - "*.{{ vars.file_type }}"
+    taskRunner:
+      type: io.kestra.plugin.core.runner.Process
+    commands:
+      # - wget --quiet --output-document {{ render(vars.file) }}.gz {{ vars.url }}.gz | gunzip > {{ render(vars.file) }}
+      - wget -qO- {{ vars.url }}.gz | gunzip > {{ render(vars.file) }}
+
+  - id: parce_params_debug
+    type: io.kestra.plugin.core.log.Log
+    logLevel: DEBUG
+    message: |
+      Параметры для запуска закачки факлв в GCS:
+         upload_from: {{ render(vars.gcs_in_file) }}
+         upload_to: {{ render(vars.gcs_out_file) }}
+
+  - id: upload_gcs
+    type: io.kestra.plugin.gcp.gcs.Upload
+    from: "{{ render(vars.gcs_in_file) }}"
+    to: "{{ render(vars.gcs_out_file) }}"
+    allowFailure: true
+
+  - id: clean_files
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+    description: To avoid cluttering your storage, we will remove the downloaded files
+
+pluginDefaults:
+  - type: io.kestra.plugin.gcp
+    values:
+      serviceAccount: "{{kv('GCP_CREDS')}}"
+      projectId: "{{kv('GCP_PROJECT_ID')}}"
+      location: "{{kv('GCP_LOCATION')}}"
+      bucket: "{{kv('GCP_BUCKET_NAME')}}"
+
+triggers:
+  - id: green_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 12 5 * *"
+    inputs:
+      taxi: green
+      subdir: ""
+  - id: yellow_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: 0 12 5 * *
+    inputs:
+      taxi: yellow
+      subdir: ""
