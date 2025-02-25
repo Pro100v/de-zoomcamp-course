@@ -7,6 +7,7 @@ sources:
     tables:
       - name: hw04-green-raw
       - name: hw04-yellow-raw
+      - name: hw04_fhv_raw
 
 models:
     - name: hw04_stg_green_tripdata
