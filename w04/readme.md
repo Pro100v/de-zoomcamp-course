@@ -378,9 +378,9 @@ what are **dropoff_zones** with the 2nd longest p90 trip_duration ?
 #### Solving
 
 - data source `hw04_fhv_raw` added to `staging` schema - which in turn was loaded via Kestra flow (see [./flows/flow.yaml](./flows/flow.yaml))
-- intermediate layer for raw data extraction added [w04/dbt/models/staging/hw04_stg_fhv_tripdata.sql](w04/dbt/models/staging/hw04_stg_fhv_tripdata.sql)
-- table with facts added [w04/dbt/models/core/hw04_fact_fhv_trips.sql](w04/dbt/models/core/hw04_fact_fhv_trips.sql)
-- and in the final stage table with dimensions for solution was added final question [w04/dbt/models/core/hw04_dim_fhv_monthly_zone_traveltime_p90.sql](w04/dbt/models/core/hw04_dim_fhv_monthly_zone_traveltime_p90.sql)
+- intermediate layer for raw data extraction added [./dbt/models/staging/hw04_stg_fhv_tripdata.sql](w04/dbt/models/staging/hw04_stg_fhv_tripdata.sql)
+- table with facts added [./dbt/models/core/hw04_fact_fhv_trips.sql](w04/dbt/models/core/hw04_fact_fhv_trips.sql)
+- and in the final stage table with dimensions for solution was added final question [./dbt/models/core/hw04_dim_fhv_monthly_zone_traveltime_p90.sql](w04/dbt/models/core/hw04_dim_fhv_monthly_zone_traveltime_p90.sql)
 
 - <details>
   <summary>Final query:</summary>
