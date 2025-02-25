@@ -437,3 +437,7 @@ what are **dropoff_zones** with the 2nd longest p90 trip_duration ?
 ## Solution
 
 - To be published after deadline
+
+## Final Schema Linaege
+
+![image](./final_schema.png)
