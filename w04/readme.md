@@ -171,6 +171,10 @@ You might want to add some new dimensions `year` (e.g.: 2019, 2020), `quarter` (
 
 Considering the YoY Growth in 2020, which were the yearly quarters with the best (or less worse) and worst results for green, and yellow
 
+#### Solving
+
+Into previous model [./dbt/models/core/hw04_fact_trips.sql](dbt/models/core/hw04_fact_trips.sql) was added axillary fields for extract year, quarter and month entries.
+
 ```sql
     ...
     extractedRACT(MONTH FROM trips_unioned.pickup_datetime) as dfreq_month,
@@ -178,6 +182,55 @@ Considering the YoY Growth in 2020, which were the yearly quarters with the best
     EXTRACT(YEAR FROM trips_unioned.pickup_datetime) as dfreq_year
     ...
 ```
+
+After that was added new model [./dbt/models/core/hw04_dim_taxi_trips_quarterly_revenue.sql](dbt/models/core/hw04_dim_taxi_trips_quarterly_revenue.sql) for compute quarterly revenue and growth.
+
+- <details>
+  <summary>model definition:</summary>
+
+  ```sql
+    {{ config(materialized="table") }}
+
+    with
+        qrt as (
+            select
+                fct.service_type,
+                fct.dfreq_year,
+                fct.dfreq_quarter,
+                sum(fct.total_amount) as total_amount
+            from {{ ref("hw04_fact_trips") }} as fct
+            where extract(year from fct.pickup_datetime) in (2019, 2020)
+            group by 1, 2, 3
+        ),
+        qrt2 as (
+            select
+                *,
+                lag(qrt.total_amount, 4, 0) over (
+                    partition by qrt.service_type order by qrt.dfreq_year, qrt.dfreq_quarter
+                ) as prev_total_ammount
+            from qrt
+        )
+    select
+        -- Revenue grouping 
+        dfreq_year as revenue_year,
+        dfreq_quarter as revenue_quarter,
+        service_type,
+
+        -- Revenue calculation 
+        total_amount as cur_total_ammount,
+        prev_total_ammount,
+        case
+            when prev_total_ammount != 0 and total_amount != 0
+            then ROUND(((total_amount - prev_total_ammount) / total_amount) * 100, 2)
+            else 0
+        end as quarter_yty_revenue_growth,
+    from qrt2
+    order by revenue_year, revenue_quarter, service_type
+  ```
+
+</details>
+
+Result of dimension table:
 
 |revenue_year | revenue_quarter | service_type | cur_total_ammount | prev_total_ammount | quarter_yty_revenue_growth|
 |:----------- | :-------------- | :----------- | :----------------- | :------------------ | :------------------------ |
@@ -189,10 +242,10 @@ Considering the YoY Growth in 2020, which were the yearly quarters with the best
 |2019 | Q3 | yellow | 170539971.73 | 0 | 0|
 |2019 | Q4 | green | 15477249.86 | 0 | 0|
 |2019 | Q4 | yellow | 173180728.59 | 0 | 0|
-|2020 | Q1 | green | 11469830.44 | 25784959.79 | -124.81|
-|2020 | Q1 | yellow | 142702840.46 | 162985803.33 | -14.21|
-|2020 | Q2 | green | 1545967.08 | 21113088.7 | -1265.69|
-|2020 | Q2 | yellow | 15602926.33 | 180235831.11 | -1055.14|
+|**2020** | **Q1** | **green** | **11469830.44** | **25784959.79** | **-124.81**|
+|**2020** | **Q1** | **yellow** | **142702840.46** | **162985803.33** | **-14.21**|
+|**2020** | **Q2** | **green** | **1545967.08** | **21113088.7** | **-1265.69**|
+|**2020** | **Q2** | **yellow** | **15602926.33** | **180235831.11** | **-1055.14**|
 |2020 | Q3 | green | 2362714.48 | 17396258.84 | -636.28|
 |2020 | Q3 | yellow | 41399509.43 | 170539971.73 | -311.94|
 |2020 | Q4 | green | 2442617.85 | 15477249.86 | -533.63|
@@ -201,7 +254,7 @@ Considering the YoY Growth in 2020, which were the yearly quarters with the best
 - green: {best: 2020/Q2, worst: 2020/Q1}, yellow: {best: 2020/Q2, worst: 2020/Q1}
 - green: {best: 2020/Q2, worst: 2020/Q1}, yellow: {best: 2020/Q3, worst: 2020/Q4}
 - green: {best: 2020/Q1, worst: 2020/Q2}, yellow: {best: 2020/Q2, worst: 2020/Q1}
-- green: {best: 2020/Q1, worst: 2020/Q2}, yellow: {best: 2020/Q1, worst: 2020/Q2}
+- **green: {best: 2020/Q1, worst: 2020/Q2}, yellow: {best: 2020/Q1, worst: 2020/Q2}**
 - green: {best: 2020/Q1, worst: 2020/Q2}, yellow: {best: 2020/Q3, worst: 2020/Q4}
 
 ### Question 6: P97/P95/P90 Taxi Monthly Fare
@@ -212,8 +265,63 @@ Considering the YoY Growth in 2020, which were the yearly quarters with the best
 
 Now, what are the values of `p97`, `p95`, `p90` for Green Taxi and Yellow Taxi, in April 2020?
 
+#### Solving
+
+Was added new model [./dbt/models/core/hw04_dim_taxi_trips_monthly_fare_p95.sql](dbt/models/core/hw04_dim_taxi_trips_monthly_fare_p95.sql) for compute monthly fare and percentile.
+
+- <details>
+  <summary>model definition:</summary>
+
+  ```sql
+    {{
+        config(
+            materialized='table'
+        )
+    }}
+
+    WITH filtered_trips AS (
+        SELECT 
+            service_type,
+            dfreq_year AS year,
+            dfreq_month AS month,
+            fare_amount
+        FROM {{ ref("hw04_fact_trips") }}
+        WHERE 
+            fare_amount > 0
+            AND trip_distance > 0
+            AND payment_type_description IN ('Cash', 'Credit card')
+    )
+
+    SELECT DISTINCT
+        service_type,
+        year as fare_year,
+        month as fare_month,
+        PERCENTILE_CONT(fare_amount, 0.97) OVER (PARTITION BY service_type, year, month) AS p97,
+        PERCENTILE_CONT(fare_amount, 0.95) OVER (PARTITION BY service_type, year, month) AS p95,
+        PERCENTILE_CONT(fare_amount, 0.90) OVER (PARTITION BY service_type, year, month) AS p90
+    FROM filtered_trips
+    ORDER BY fare_year, fare_month, service_type
+  ```
+
+</details>
+
+SQL for get data for solving question:
+
+```sql
+SELECT * FROM `terraform-probe-448818.zoomcamp.hw04_dim_taxi_trips_monthly_fare_p95` 
+where fare_year=2020
+  and fare_month=4
+```
+
+Result:
+
+| service_type | fare_year | fare_month | p97 | p95 | p90 |
+|:------------ |:--------- |:---------- |:--- |:--- |:--- |
+| green | 2020 | 4 | 55.0 | 45.0 | 26.5 |
+| yellow | 2020 | 4 | 31.5 | 25.5 | 19.0 |
+
 - green: {p97: 55.0, p95: 45.0, p90: 26.5}, yellow: {p97: 52.0, p95: 37.0, p90: 25.5}
-- green: {p97: 55.0, p95: 45.0, p90: 26.5}, yellow: {p97: 31.5, p95: 25.5, p90: 19.0}
+- **green: {p97: 55.0, p95: 45.0, p90: 26.5}, yellow: {p97: 31.5, p95: 25.5, p90: 19.0}**
 - green: {p97: 40.0, p95: 33.0, p90: 24.5}, yellow: {p97: 52.0, p95: 37.0, p90: 25.5}
 - green: {p97: 40.0, p95: 33.0, p90: 24.5}, yellow: {p97: 31.5, p95: 25.5, p90: 19.0}
 - green: {p97: 55.0, p95: 45.0, p90: 26.5}, yellow: {p97: 52.0, p95: 25.5, p90: 19.0}
